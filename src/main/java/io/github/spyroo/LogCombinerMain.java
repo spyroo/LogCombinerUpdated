@@ -1,6 +1,7 @@
 package io.github.spyroo;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -17,6 +18,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -184,6 +186,15 @@ public class LogCombinerMain extends Application{
         System.out.println("NEW API KEY: " + apiKey);
         lc.setLogsApiKey(apiKey);
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            public void handle(WindowEvent e) {
+                lc.delDir();
+                System.out.println("Deleting temp files");
+                Platform.exit();
+                System.exit(0);
+            }
+        });
     }
 
     private String filterText(String unfiltered){

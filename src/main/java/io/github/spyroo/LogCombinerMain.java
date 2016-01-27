@@ -104,6 +104,12 @@ public class LogCombinerMain extends Application{
         final TextField addLogLink = new TextField();
         addLogLink.setPromptText("Log Link");
         addLogLink.setMaxWidth(Double.MAX_VALUE);
+        addLogLink.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent actionEvent) {
+                links.add(lc.getCleanLogsLink(addLogLink.getText()));
+                addLogLink.clear();
+            }
+        });
         final Button addButton = new Button("Add");
         addButton.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {

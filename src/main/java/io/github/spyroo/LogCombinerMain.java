@@ -62,7 +62,6 @@ public class LogCombinerMain extends Application{
             FileWriter fw = new FileWriter(apiKeyFile);
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write(apiKey);
-            System.out.println("wrote");
             bw.close();
             br.close();
         }catch(Exception e){
@@ -162,7 +161,7 @@ public class LogCombinerMain extends Application{
         submitButton.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
                 ExecutorService pool = Executors.newFixedThreadPool(3);
-                Runnable worker = new LogsWorker(newLogName.getText(), newLogMap.getText(), lc, links, progressBar);
+                Runnable worker = new LogsWorker(filterText(newLogName.getText()), filterText(newLogMap.getText()), lc, links, progressBar);
                 pool.submit(worker);
             }
         });
@@ -179,6 +178,10 @@ public class LogCombinerMain extends Application{
         System.out.println("NEW API KEY: " + apiKey);
         lc.setLogsApiKey(apiKey);
         primaryStage.show();
+    }
+
+    private String filterText(String unfiltered){
+        return unfiltered.replaceAll("/", "-");
     }
 
     public static void updateResponse(LogsResponse response){

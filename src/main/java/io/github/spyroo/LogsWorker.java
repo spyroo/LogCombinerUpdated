@@ -3,6 +3,7 @@ package io.github.spyroo;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ProgressBar;
 
+import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,6 +67,10 @@ public class LogsWorker implements Runnable{
             total += incs;
             progressBar.setProgress(total);
             System.out.println(total);
+            if(combinedLogs.length() > 5e+6){
+                JOptionPane.showMessageDialog(null, "Combined file is too large for logs.tf", "Error", JOptionPane.CANCEL_OPTION);
+                return;
+            }
             resp = lc.sendLog(newName, newMap, combinedLogs);
             total += incs;
             progressBar.setProgress(total);

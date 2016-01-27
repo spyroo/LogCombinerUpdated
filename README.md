@@ -5,4 +5,3 @@ This is the new version of my LogCombiner application. It takes 2+ links from ht
 ##Screenshot
 https://i.imgur.com/VO3SSde.png
 
-

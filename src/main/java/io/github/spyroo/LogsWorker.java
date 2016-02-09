@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LogsWorker implements Runnable{
@@ -32,7 +33,7 @@ public class LogsWorker implements Runnable{
         String newMap = newLogMap;
         LogsResponse resp = new LogsResponse();
         //clean > dl link > get file > combine
-        Map<String, String> cleanToDL = new HashMap<String, String>();
+        Map<String, String> cleanToDL = new LinkedHashMap<String, String>();
         for (String s : links) {
             String clean = lc.getCleanLogsLink(s);
             cleanToDL.put(clean, lc.getLogsDownloadLink(clean));

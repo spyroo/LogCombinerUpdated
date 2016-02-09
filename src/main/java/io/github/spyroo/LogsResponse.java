@@ -1,13 +1,10 @@
 package io.github.spyroo;
 
-/**
- * Created by Declan on 1/25/2016.
- */
 public class LogsResponse {
 
-    private Boolean success;
-    private String url;
-    private String error;
+    private Boolean success;    //if it was a successful upload
+    private String  url;        //the URL to the new log
+    private String  error;      //if there was an error, the error that logs spit back at us
 
     public Boolean getSuccess() {
         return success;

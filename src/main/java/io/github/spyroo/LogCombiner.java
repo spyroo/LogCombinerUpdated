@@ -36,8 +36,8 @@ public class LogCombiner {
 	private String appName;
 	/**
 	 * Accepts an App name(to be displayed on the logs page after an upload) and an api key used to upload to logs.tf
-	 * @param appName
-	 * @param logsApiKey
+	 * @param appName The name of the app that is doing the uploading
+	 * @param logsApiKey The API key to be used to upload the logs
 	 */
 	public LogCombiner(String appName, String logsApiKey){
 		this.logsApiKey = logsApiKey;
@@ -62,29 +62,12 @@ public class LogCombiner {
 		zf.extractAll(tempDir.toAbsolutePath().toString());
 		return new File(tempDir.toString() + "/" + getName(cleanLogsLink));
 	}
-	
-	/**
-	 * Combines file1 and file2 into a new log file with the name provided
-	 * @param file1
-	 * @param file2
-	 * @param newLogFileName
-	 * @return The new combined log file
-	 * @throws IOException if there was an error writing to the file
-	 */
-	public File getCombinedFiles(File file1, File file2, String newLogFileName) throws IOException{
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		out.write(Files.readAllBytes(file1.toPath()));
-		out.write(Files.readAllBytes(file2.toPath()));
-		File f = new File(tempDir.toString() + "/" + newLogFileName);
-		Files.write(f.toPath(), out.toByteArray());
-		return f;
-	}
 
     /**
      * Combines every file in the list of files into a new log file with the name provided
      * @param files List of Files to combine
      * @param newLogFileName New name for the log file
-     * @return
+     * @return A new File reference that contains the logs combined
      */
 	public File getCombinedFiles(File[] files, String newLogFileName)throws IOException{
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -98,24 +81,24 @@ public class LogCombiner {
 
 	/**
 	 * Downloads the zip file from the url provided
-	 * @param fileUrl
-	 * @return
+	 * @param fileUrl The URL to grab the log zip file from
+	 * @return A ZipFile that contains the log file that was downloaded
 	 * @throws IOException
 	 * @throws ZipException
 	 */
 	public ZipFile getZipFile(String fileUrl) throws IOException, ZipException{
 		URL website = new URL(fileUrl);
 		File f = new File(tempDir.toString() + "/templog");
-		f.createNewFile();
+		boolean success = f.createNewFile();
+		//todo log success
 		Files.copy(website.openStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
-		ZipFile za = new ZipFile(f);
-		return za;
+		return new ZipFile(f);
 	}
 	
 	/**
 	 * Cleans the logs.tf link to allow a download link to be formed.
-	 * @param dirtyLogsUrl
-	 * @return
+	 * @param dirtyLogsUrl The dirty URL that needs to be cleaned
+	 * @return A clean URL to grab the file from
 	 */
 	public String getCleanLogsLink(String dirtyLogsUrl){
 		StringBuilder sb = new StringBuilder();
@@ -129,8 +112,8 @@ public class LogCombiner {
 	}
 	/**
 	 * Returns the download url for the log url provided
-	 * @param url
-	 * @return
+	 * @param url The non-download URl
+	 * @return the download URL to the log
 	 */
 	public String getLogsDownloadLink(String url){
 		return "http://logs.tf/static/logs/" + getName(url) + ".zip";
@@ -143,10 +126,10 @@ public class LogCombiner {
 	
 	/**
 	 * Sends the log to logs.tf to be uploaded. This method uses the fields provided in the constructor to generate the query.
-	 * @param title
-	 * @param map
-	 * @param logfile
-	 * @return
+	 * @param title The title of the new log
+	 * @param map The map of the new log
+	 * @param logfile The file to upload to logs.tf
+	 * @return a LogsResponse reference that contains info on the response from logs.tf
 	 */
 	public LogsResponse sendLog(String title, String map, File logfile){
 		
@@ -161,7 +144,7 @@ public class LogCombiner {
 			HttpResponse response = httpClient.execute(uploadFile); 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
 			StringBuilder sb = new StringBuilder();
-			for (String line = null; (line = reader.readLine()) != null;) {
+			for (String line; (line = reader.readLine()) != null;) {
 			    sb.append(line).append("\n");
 			}
 			String responseString = sb.toString();
@@ -187,12 +170,12 @@ public class LogCombiner {
 	}
 	/**
 	 * Constructs the MultipartEntityBuilder object used to send the log to logs.tf
-	 * @param logsTitle
-	 * @param mapName
-	 * @param logFile
-	 * @param logsApiKey
-	 * @param uploader
-	 * @return
+	 * @param logsTitle The title of the new log
+	 * @param mapName The map name of the new log
+	 * @param logFile The logFile to be uploaded
+	 * @param logsApiKey The API key to be used
+	 * @param uploader The uploading app name to use
+	 * @return A MultipartEntityBuilder that can build the request
 	 */
 	private MultipartEntityBuilder buildLogsRequest(String logsTitle, String mapName, File logFile, String logsApiKey, String uploader){
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -200,7 +183,7 @@ public class LogCombiner {
 		builder.addTextBody("map", mapName, ContentType.TEXT_PLAIN);
 		builder.addBinaryBody("logfile", logFile, ContentType.APPLICATION_OCTET_STREAM, logFile.getName());
 		builder.addTextBody("key", logsApiKey, ContentType.TEXT_PLAIN);
-		builder.addTextBody("uploader", "Spyro's Combiner", ContentType.TEXT_PLAIN);
+		builder.addTextBody("uploader", getAppName(), ContentType.TEXT_PLAIN);
 		return builder;
 	}
 

@@ -39,7 +39,6 @@ public class LogCombinerMain extends Application{
     private final HBox changeLogsForm = new HBox();
     private final HBox newLogNameForm = new HBox();
     private final HBox newLogSubmitForm = new HBox();
-    private final VBox fullSubmitForm = new VBox();
     private final VBox vbox = new VBox();
     private static final TextField combinedLogResult = new TextField();
 
@@ -48,17 +47,22 @@ public class LogCombinerMain extends Application{
         launch(args);
     }
 
-    public void checkApiKey(boolean overrideNew, Stage primaryStage){
+    /**
+     * Check to see if there is a current API key
+     * @param overrideNew If true, will always prompt for a new key
+     */
+    public void checkApiKey(boolean overrideNew){
         try {
             File apiKeyFile = new File("apikey.txt");
             if (!apiKeyFile.exists()) {
-                apiKeyFile.createNewFile();
+                boolean newFileCreatedSuccess = apiKeyFile.createNewFile();
+                //todo add logging for this
             }
             FileReader fr = new FileReader(apiKeyFile);
             BufferedReader br = new BufferedReader(fr);
             apiKey = br.readLine();
             if (overrideNew || apiKey == null || apiKey.length() < 20 ) {
-                apiKey = getApiKeyFromUser(primaryStage);
+                apiKey = getApiKeyFromUser();
             }
 
             FileWriter fw = new FileWriter(apiKeyFile);
@@ -71,8 +75,12 @@ public class LogCombinerMain extends Application{
         }
     }
 
-    public String getApiKeyFromUser(Stage stage){
-        String s = (String)JOptionPane.showInputDialog(
+    /**
+     * Display an input box to the user to grab a new API key
+     * @return The new API key
+     */
+    public String getApiKeyFromUser(){
+        return (String)JOptionPane.showInputDialog(
                 null,
                 "Enter your logs.tf api key from http://logs.tf/uploader",
                 "Api Key",
@@ -80,8 +88,6 @@ public class LogCombinerMain extends Application{
                 null,
                 null,
                 "key");
-
-        return s;
     }
 
     @Override
@@ -95,7 +101,7 @@ public class LogCombinerMain extends Application{
         final Button apiButton = new Button("Change API key");
         apiButton.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                checkApiKey(true, primaryStage);
+                checkApiKey(true);
             }
         });
         title.getChildren().addAll(titleLabel, apiButton);
@@ -127,7 +133,7 @@ public class LogCombinerMain extends Application{
         });
         changeLogsForm.getChildren().addAll(addLogLink, addButton, removeButton);
         changeLogsForm.setSpacing(3);
-        changeLogsForm.setHgrow(addLogLink, Priority.ALWAYS);
+        HBox.setHgrow(addLogLink, Priority.ALWAYS);
 
         logsList.setItems(links);
         logsList.setCellFactory(TextFieldListCell.forListView());
@@ -143,7 +149,7 @@ public class LogCombinerMain extends Application{
 
         newLogNameForm.setSpacing(3);
         newLogNameForm.getChildren().addAll(newLogName, newLogMap);
-        newLogNameForm.setHgrow(newLogName, Priority.ALWAYS);
+        HBox.setHgrow(newLogName, Priority.ALWAYS);
 
         combinedLogResult.setPromptText("Result");
         combinedLogResult.setEditable(false);
@@ -159,7 +165,7 @@ public class LogCombinerMain extends Application{
 
         newLogSubmitForm.setSpacing(3);
         newLogSubmitForm.getChildren().addAll(combinedLogResult, copyButton);
-        newLogSubmitForm.setHgrow(combinedLogResult, Priority.ALWAYS);
+        HBox.setHgrow(combinedLogResult, Priority.ALWAYS);
 
         final ProgressBar progressBar = new ProgressBar(0);
         progressBar.setMaxWidth(Double.MAX_VALUE);
@@ -182,7 +188,7 @@ public class LogCombinerMain extends Application{
 
         primaryStage.setScene(new Scene(vbox));
 
-        checkApiKey(false, primaryStage);
+        checkApiKey(false);
         System.out.println("NEW API KEY: " + apiKey);
         lc.setLogsApiKey(apiKey);
         primaryStage.show();
@@ -197,10 +203,19 @@ public class LogCombinerMain extends Application{
         });
     }
 
+    /**
+     * Filter all the /'s from the input
+     * @param unfiltered The unfiltered text
+     * @return Filtered text with / replaced by -
+     */
     private String filterText(String unfiltered){
         return unfiltered.replaceAll("/", "-");
     }
 
+    /**
+     * Update the response from a LogsWorker
+     * @param response The LogsResponse reference to grab info from
+     */
     public static void updateResponse(LogsResponse response){
         if(response.getSuccess()) {
             combinedLogResult.setText("http://logs.tf" + response.getUrl());

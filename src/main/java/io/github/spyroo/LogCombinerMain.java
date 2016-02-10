@@ -19,6 +19,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,6 +43,7 @@ public class LogCombinerMain extends Application{
     private final HBox newLogSubmitForm = new HBox();
     private final VBox vbox = new VBox();
     private static final TextField combinedLogResult = new TextField();
+    private static final Logger logger = LogManager.getLogger(LogCombinerMain.class);
 
 
     public static void main(String[] args){
@@ -56,11 +59,13 @@ public class LogCombinerMain extends Application{
             File apiKeyFile = new File("apikey.txt");
             if (!apiKeyFile.exists()) {
                 boolean newFileCreatedSuccess = apiKeyFile.createNewFile();
-                //todo add logging for this
+                logger.debug("API key file did not exist, created new API key file");
             }
             FileReader fr = new FileReader(apiKeyFile);
             BufferedReader br = new BufferedReader(fr);
+            logger.debug("Reading API key file...");
             apiKey = br.readLine();
+            logger.debug("Read API key as " + apiKey);
             if (overrideNew || apiKey == null || apiKey.length() < 20 ) {
                 apiKey = getApiKeyFromUser();
             }
@@ -71,7 +76,7 @@ public class LogCombinerMain extends Application{
             bw.close();
             br.close();
         }catch(Exception e){
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -80,6 +85,7 @@ public class LogCombinerMain extends Application{
      * @return The new API key
      */
     public String getApiKeyFromUser(){
+        logger.debug("Getting new API key from user");
         return (String)JOptionPane.showInputDialog(
                 null,
                 "Enter your logs.tf api key from http://logs.tf/uploader",
@@ -95,6 +101,7 @@ public class LogCombinerMain extends Application{
 
         lc = new LogCombiner("spyros log combiner", apiKey);
 
+        logger.debug("Creating GUI");
         final HBox title = new HBox(3);
         final Label titleLabel = new Label("Combine logs.tf logs");
         titleLabel.setFont(new Font("Arial", 20));
@@ -189,14 +196,12 @@ public class LogCombinerMain extends Application{
         primaryStage.setScene(new Scene(vbox));
 
         checkApiKey(false);
-        System.out.println("NEW API KEY: " + apiKey);
         lc.setLogsApiKey(apiKey);
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             public void handle(WindowEvent e) {
                 lc.delDir();
-                System.out.println("Deleting temp files");
                 Platform.exit();
                 System.exit(0);
             }
@@ -217,6 +222,7 @@ public class LogCombinerMain extends Application{
      * @param response The LogsResponse reference to grab info from
      */
     public static void updateResponse(LogsResponse response){
+        logger.debug("Updating response");
         if(response.getSuccess()) {
             combinedLogResult.setText("http://logs.tf" + response.getUrl());
         }else{

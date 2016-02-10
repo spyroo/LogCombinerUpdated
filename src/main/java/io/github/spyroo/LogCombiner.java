@@ -23,6 +23,8 @@ import org.apache.commons.io.FileUtils;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Class that assists in the fetching and uploading of log files from logs.tf
@@ -30,7 +32,9 @@ import net.lingala.zip4j.exception.ZipException;
  *
  */
 public class LogCombiner {
-	
+
+	private static final Logger logger = LogManager.getLogger(LogCombiner.class);
+
 	private Path tempDir;
 	private String logsApiKey;
 	private String appName;
@@ -44,8 +48,10 @@ public class LogCombiner {
 		this.appName = appName;
 		try {
 			tempDir = Files.createTempDirectory("Combiner_");
+			logger.trace("Created LogCombiner object");
+			logger.trace(String.format("\tApp name: %s\n\tAPI key: %s\n\tTemp Dir: %s", appName, logsApiKey, tempDir.toString()));
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 	
@@ -58,6 +64,7 @@ public class LogCombiner {
 	 * @throws IOException if there was a problem retrieving the file
 	 */
 	public File getLogFile(String logFileUrl, String cleanLogsLink) throws ZipException, IOException{
+		logger.trace("Unzipping log from from " + logFileUrl);
 		ZipFile zf = getZipFile(logFileUrl);
 		zf.extractAll(tempDir.toAbsolutePath().toString());
 		return new File(tempDir.toString() + "/" + getName(cleanLogsLink));
@@ -70,6 +77,7 @@ public class LogCombiner {
      * @return A new File reference that contains the logs combined
      */
 	public File getCombinedFiles(File[] files, String newLogFileName)throws IOException{
+		logger.trace(String.format("Combining %d files into new file %s", files.length, newLogFileName));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for(File f : files){
             out.write(Files.readAllBytes(f.toPath()));
@@ -90,7 +98,7 @@ public class LogCombiner {
 		URL website = new URL(fileUrl);
 		File f = new File(tempDir.toString() + "/templog");
 		boolean success = f.createNewFile();
-		//todo log success
+		logger.trace("Success in creating new temp log file: " + success);
 		Files.copy(website.openStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		return new ZipFile(f);
 	}
@@ -101,6 +109,7 @@ public class LogCombiner {
 	 * @return A clean URL to grab the file from
 	 */
 	public String getCleanLogsLink(String dirtyLogsUrl){
+		logger.trace("Creating a clean logs link from dirty URL: " + dirtyLogsUrl);
 		StringBuilder sb = new StringBuilder();
 		for(char c : dirtyLogsUrl.toCharArray()){
 			if(c == '?'){
@@ -132,7 +141,7 @@ public class LogCombiner {
 	 * @return a LogsResponse reference that contains info on the response from logs.tf
 	 */
 	public LogsResponse sendLog(String title, String map, File logfile){
-		
+
 		CloseableHttpClient httpClient = HttpClients.createDefault();
 		HttpPost uploadFile = new HttpPost("http://logs.tf/upload");
 		MultipartEntityBuilder builder = buildLogsRequest(title, map, logfile, logsApiKey, appName);
@@ -141,6 +150,7 @@ public class LogCombiner {
         LogsResponse responseObject = new LogsResponse();
 
 		try{
+			logger.debug("Sending log to logs.tf/upload");
 			HttpResponse response = httpClient.execute(uploadFile); 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
 			StringBuilder sb = new StringBuilder();
@@ -150,6 +160,7 @@ public class LogCombiner {
 			String responseString = sb.toString();
             Gson respBuilder = new GsonBuilder().create();
             responseObject = respBuilder.fromJson(responseString, LogsResponse.class);
+			logger.debug("Got a response, constructing object");
             return  responseObject;
 					
 		}catch(Exception e){
@@ -163,6 +174,7 @@ public class LogCombiner {
 	 */
 	public void delDir() {
 		try {
+			logger.trace("Deleting temp dir");
 			FileUtils.deleteDirectory(tempDir.toFile());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -178,6 +190,7 @@ public class LogCombiner {
 	 * @return A MultipartEntityBuilder that can build the request
 	 */
 	private MultipartEntityBuilder buildLogsRequest(String logsTitle, String mapName, File logFile, String logsApiKey, String uploader){
+		logger.trace("Building multipart entity for logs request");
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 		builder.addTextBody("title", logsTitle, ContentType.TEXT_PLAIN);
 		builder.addTextBody("map", mapName, ContentType.TEXT_PLAIN);
